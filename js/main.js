@@ -595,7 +595,7 @@ document.addEventListener('DOMContentLoaded', function() {
     return html;
   }
 
-  // 在 getEntryTypeStatistics 函数之后添加年份统计函数
+  // 在 getEntryTypeStatistics 函数之后添加年份统计函数(仅统计论文: inproceedings, article)
   function getYearStatistics(entries) {
     const yearCount = {};
     const currentYear = new Date().getFullYear();
@@ -605,6 +605,10 @@ document.addEventListener('DOMContentLoaded', function() {
     entries.forEach(entry => {
       // 优先使用 year 字段
       let year = null;
+      // 仅统计 inproceedings 和 article 类型
+      if (entry.entryType !== 'inproceedings' && entry.entryType !== 'article') {
+        return;
+      }
       if (entry.entryTags.year) {
         // 提取年份数字（去除可能的括号或其他字符）
         const yearMatch = entry.entryTags.year.match(/\b(19|20)\d{2}\b/);
@@ -641,6 +645,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
     
+    console.log(yearCount);
     return {
       yearCount,
       missingYearCount,
@@ -662,7 +667,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let html = '<div class="year-statistics">';
     
     // 基本统计信息
-    html += '<p><strong>年份统计：</strong></p>';
+    html += '<p><strong>年份统计(仅统计 inproceedings, article 类别)：</strong></p>';
     html += '<ul>';
     if (stats.oldestYear && stats.newestYear) {
       html += `<li>时间跨度：${stats.oldestYear} - ${stats.newestYear}（${stats.newestYear - stats.oldestYear + 1}年）</li>`;
