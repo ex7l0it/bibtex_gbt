@@ -94,8 +94,8 @@ const GBT7714_2015 = {
         software: [ 
             "author", // 主要责任者
             "title", // 题名
-            "year", // 出版年
             "url", // 获取和访问路径
+            "date", // 更新或修改日期
             "urldate", // 引用日期
         ],
         // TODO: 其他
