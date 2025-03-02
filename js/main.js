@@ -569,7 +569,7 @@ document.addEventListener('DOMContentLoaded', function() {
     return { typeCount, classCount };
   }
   
-  // 生成条目类型统计HTML
+  // 生成年份统计HTML
   function generateTypeStatisticsHTML(stats) {
     let html = '<div class="type-statistics">';
     
@@ -589,6 +589,136 @@ document.addEventListener('DOMContentLoaded', function() {
       const classesList = classes.map(cls => `${cls}: ${stats.classCount[cls]}`);
       html += classesList.join(', ');
       html += '</p>';
+    }
+    
+    html += '</div>';
+    return html;
+  }
+
+  // 在 getEntryTypeStatistics 函数之后添加年份统计函数
+  function getYearStatistics(entries) {
+    const yearCount = {};
+    const currentYear = new Date().getFullYear();
+    let missingYearCount = 0;
+    
+    // 按年份统计条目数量
+    entries.forEach(entry => {
+      // 优先使用 year 字段
+      let year = null;
+      if (entry.entryTags.year) {
+        // 提取年份数字（去除可能的括号或其他字符）
+        const yearMatch = entry.entryTags.year.match(/\b(19|20)\d{2}\b/);
+        if (yearMatch) {
+          year = parseInt(yearMatch[0], 10);
+        }
+      } 
+      // 如果没有 year 字段或无法从中提取年份，尝试从 date 字段提取
+      else if (entry.entryTags.date) {
+        const dateMatch = entry.entryTags.date.match(/\b(19|20)\d{2}\b/);
+        if (dateMatch) {
+          year = parseInt(dateMatch[0], 10);
+        }
+      }
+      
+      if (year) {
+        yearCount[year] = (yearCount[year] || 0) + 1;
+      } else {
+        missingYearCount++;
+      }
+    });
+    
+    // 计算额外的统计信息
+    const years = Object.keys(yearCount).map(year => parseInt(year, 10)).sort();
+    let recentFiveYearsCount = 0;
+    let recentTenYearsCount = 0;
+    
+    years.forEach(year => {
+      if (year >= currentYear - 4) {
+        recentFiveYearsCount += yearCount[year];
+      }
+      if (year >= currentYear - 9) {
+        recentTenYearsCount += yearCount[year];
+      }
+    });
+    
+    return {
+      yearCount,
+      missingYearCount,
+      oldestYear: years.length > 0 ? Math.min(...years) : null,
+      newestYear: years.length > 0 ? Math.max(...years) : null,
+      recentFiveYearsCount,
+      recentTenYearsCount,
+      totalWithYear: entries.length - missingYearCount
+    };
+  }
+  
+  // 生成年份统计HTML
+  function generateYearStatisticsHTML(stats) {
+    if (!stats || !stats.yearCount || Object.keys(stats.yearCount).length === 0) {
+      return '<p>无法获取年份统计信息</p>';
+    }
+    
+    const currentYear = new Date().getFullYear();
+    let html = '<div class="year-statistics">';
+    
+    // 基本统计信息
+    html += '<p><strong>年份统计：</strong></p>';
+    html += '<ul>';
+    if (stats.oldestYear && stats.newestYear) {
+      html += `<li>时间跨度：${stats.oldestYear} - ${stats.newestYear}（${stats.newestYear - stats.oldestYear + 1}年）</li>`;
+    }
+    if (stats.totalWithYear > 0) {
+      html += `<li>最近5年（${currentYear-4}-${currentYear}）：${stats.recentFiveYearsCount}篇 (${Math.round(stats.recentFiveYearsCount / stats.totalWithYear * 100)}%)</li>`;
+      html += `<li>最近10年（${currentYear-9}-${currentYear}）：${stats.recentTenYearsCount}篇 (${Math.round(stats.recentTenYearsCount / stats.totalWithYear * 100)}%)</li>`;
+    }
+    if (stats.missingYearCount > 0) {
+      html += `<li>无年份信息：${stats.missingYearCount}篇</li>`;
+    }
+    html += '</ul>';
+    
+    // 创建年份直方图
+    const years = Object.keys(stats.yearCount).map(Number).sort((a, b) => a - b);
+    if (years.length > 0) {
+      html += '<div class="year-histogram">';
+      html += '<p><strong>年份分布：</strong></p>';
+      html += '<div class="histogram-container" style="max-width: 100%; border-left: 1px solid #ddd; border-bottom: 1px solid #ddd; padding-top: 5px;">';
+      
+      // 找出最大计数，用于归一化条形高度
+      const maxCount = Math.max(...Object.values(stats.yearCount));
+      
+      // 为每一年创建一个条形
+      years.forEach(year => {
+        const count = stats.yearCount[year];
+        const heightPercentage = Math.max(10, Math.round((count / maxCount) * 100));
+        
+        // 根据年份确定颜色 - 越近的年份颜色越深
+        const yearAge = currentYear - year;
+        const colorIntensity = Math.max(50, 80 - yearAge * 2); // 50-100 范围内的亮度
+        
+        html += `
+          <div class="histogram-bar" style="margin-right: 2px; text-align: center;">
+            <div style="height: ${heightPercentage}px; background-color: hsl(210, 80%, ${colorIntensity}%); 
+                        min-width: 15px; position: relative; margin-bottom: 20px;">
+              <span style="position: absolute; top: 100%; left: 50%; transform: translateX(-50%); font-size: 10px;">${year}</span>
+              <span style="position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 10px;">${count}</span>
+            </div>
+          </div>
+        `;
+      });
+      
+      html += '</div></div>';
+      
+      // 添加年份详细列表（收缩显示）
+      html += '<div class="collapsible-section" style="margin-top: 10px;">';
+      html += '<p><strong>年份详细统计</strong> <button class="toggle-button">显示/隐藏</button></p>';
+      html += '<div class="collapsible-content" style="display: none;">';
+      html += '<ul style="columns: 4;">';
+      
+      years.forEach(year => {
+        html += `<li>${year}: ${stats.yearCount[year]}篇</li>`;
+      });
+      
+      html += '</ul></div></div>';
     }
     
     html += '</div>';
@@ -622,11 +752,15 @@ document.addEventListener('DOMContentLoaded', function() {
       // 获取条目类型统计
       const typeStats = getEntryTypeStatistics(parsedEntries);
       
-      // 添加摘要信息
+      // 添加年份统计
+      const yearStats = getYearStatistics(parsedEntries);
+      
+      // 修改为包含年份统计
       let resultsHtml = `<div class="summary">
         <h3>检查摘要</h3>
         <p>总计 ${parsedEntries.length} 个条目</p>
         ${generateTypeStatisticsHTML(typeStats)}
+        ${generateYearStatisticsHTML(yearStats)}
       </div>`;
       
       let validEntries = 0;

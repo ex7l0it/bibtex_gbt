@@ -103,3 +103,23 @@ hr {
   background-color: #ddd;
   margin: 15px 0;
 }
+.year-statistics {
+  margin-top: 15px;
+  padding-top: 10px;
+  border-top: 1px solid #eee;
+}
+.histogram-container {
+  height: 100px;
+  align-items: flex-end;
+  margin-bottom: 25px;
+  padding-bottom: 5px;
+}
+.histogram-bar {
+  display: inline-block;
+  margin: 0 1px;
+  position: relative;
+}
+.year-statistics ul {
+  margin-top: 5px;
+  padding-left: 20px;
+}
