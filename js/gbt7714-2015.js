@@ -100,4 +100,21 @@ const GBT7714_2015 = {
         ],
         // TODO: 其他
     },
+    datas: {
+        // 出版社地址
+        "addresses": {
+            "IEEE": "Piscataway, NJ",
+            "IEEE/ACM": "Piscataway, NJ",
+            "ACM": "New York, NY",
+            "ACM/IEEE": "New York, NY",
+            "USENIX": "Berkeley, CA",
+            "Springer": "Berlin, Germany",
+            "Springer-Verlag": "Berlin, Germany",
+            "Curran Associates.": "New York, NY",
+            "ACL": "Stroudsburg, PA",
+            // 无法检索到 JMLR 的地址，暂不检查
+            // PMLR 是一个在线出版平台，专门发表在各类会议和研讨会上展示的机器学习研究论文。PMLR并非传统意义上的出版社，因此没有固定的实体地址。暂不检查
+            // OpenReview.net 是一个在线出版平台，专门发表在各类会议和研讨会上展示的计算机科学研究论文。OpenReview.net 并非传统意义上的出版社，因此没有固定的实体地址。暂不检查
+        }
+    }
 }

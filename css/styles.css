@@ -123,3 +123,47 @@ hr {
   margin-top: 5px;
   padding-left: 20px;
 }
+
+.publisher-statistics {
+  margin-top: 15px;
+  padding-top: 10px;
+  border-top: 1px solid #eee;
+}
+
+.publisher-statistics ul {
+  margin-top: 5px;
+  padding-left: 20px;
+}
+
+.publisher-statistics .valid {
+  color: #27ae60;
+}
+
+.publisher-statistics .error {
+  color: #e74c3c;
+}
+
+.publisher-statistics .warning {
+  color: #f39c12;
+}
+
+.publisher-statistics .info {
+  color: #3498db;
+  font-style: italic;
+}
+
+/* 调整嵌套列表的样式 */
+.publisher-statistics ul ul {
+  margin-top: 5px;
+  margin-bottom: 10px;
+}
+
+/* 添加一些额外的颜色标识 */
+.warning {
+  color: #f39c12;
+  font-weight: bold;
+}
+
+.info {
+  color: #3498db;
+}
