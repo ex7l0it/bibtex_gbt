@@ -75,7 +75,7 @@ const GBT7714_2015 = {
             "number", // 期
             "pages", // 页码
         ],
-        // 预印刊 arXiv (仍使用 article, 其 journal 字段以 arXiv preprint 开头)
+        // 预印刊 arXiv (采用谷歌学术导出的格式，仍使用 article, 其 journal 字段以 arXiv preprint 开头)
         arxiv: [
             "author", // 主要责任者
             "title", // 题名

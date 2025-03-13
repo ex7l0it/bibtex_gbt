@@ -2,10 +2,9 @@ function checkGBT7714Format(entry) {
   const results = {
     isValid: true,
     errors: [],
-    warnings: []  // 添加警告数组
+    warnings: []
   };
   
-  // 使用 gbt7714-2015.js 中的配置
   const entryType = entry.entryType.toLowerCase();
   
   // 首先检查是否为 arXiv 预印刊
@@ -15,12 +14,10 @@ function checkGBT7714Format(entry) {
   // 从配置中获取必填字段
   let required = [];
   
-  // 如果是 arXiv 预印刊，直接使用 arXiv 的格式要求
   if (isArxiv) {
     required = GBT7714_2015.formats['arxiv'] || ['author', 'title', 'journal', 'year'];
     results.entryClassName = "预印刊";
   } 
-  // 否则，查找对应的文献类型
   else if (GBT7714_2015.formats[entryType]) {
     required = GBT7714_2015.formats[entryType];
   } else {
@@ -102,12 +99,12 @@ function checkGBT7714Format(entry) {
         // 检查是否在预定义的出版社列表中
         let foundInDatabase = false;
         for (const knownPublisher in GBT7714_2015.datas.addresses) {
-          if (publisher.toLowerCase() == knownPublisher.toLowerCase()) {
+          if (publisher.toLowerCase() === knownPublisher.toLowerCase()) {
             foundInDatabase = true;
             const standardAddress = GBT7714_2015.datas.addresses[knownPublisher];
             
-            // 检查地址是否与标准一致
-            if (!address.toLowerCase() == standardAddress.toLowerCase()) {
+            // 修正：修改比较逻辑
+            if (address.toLowerCase() !== standardAddress.toLowerCase()) {
               results.warnings.push(`出版社地址可能不标准: 使用了 "${address}"，标准地址应为 "${standardAddress}"`);
             }
             break;
@@ -388,30 +385,6 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // 存储解析后的 BibTeX 条目
   let parsedEntries = [];
-
-  // 复制到剪贴板功能
-  function createCopyButton(textToCopy) {
-    const button = document.createElement('button');
-    button.textContent = '复制';
-    button.className = 'copy-button';
-    button.style.marginLeft = '10px';
-    button.style.padding = '3px 8px';
-    button.style.fontSize = '12px';
-    button.addEventListener('click', function() {
-      navigator.clipboard.writeText(textToCopy).then(
-        function() {
-          const originalText = button.textContent;
-          button.textContent = '已复制!';
-          button.style.backgroundColor = '#27ae60';
-          setTimeout(function() {
-            button.textContent = originalText;
-            button.style.backgroundColor = '';
-          }, 1500);
-        }
-      );
-    });
-    return button;
-  }
   
   // 精简 BibTeX 字段，只保留必要的字段
   function simplifyBibTexEntry(entry) {
@@ -677,7 +650,6 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
     
-    console.log(yearCount);
     return {
       yearCount,
       missingYearCount,
@@ -861,7 +833,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         addressKeys.forEach(key => {
           const address = group.addresses[key].originalAddress;
-          if (address.toLowerCase() == databaseAddress.toLowerCase()) {
+          const addressLower = address.toLowerCase();
+          const databaseAddressLower = databaseAddress.toLowerCase();
+          
+          if (addressLower === databaseAddressLower) {
             hasCorrectAddress = true;
           } else {
             hasWrongAddress = true;
