@@ -38,8 +38,8 @@ function checkGBT7714Format(entry) {
   if (required.length === 0) {
     const requiredFields = {
       article: ['author', 'title', 'journal', 'year', 'volume', 'number', 'pages'],
-      inproceedings: ['author', 'title', 'booktitle', 'year', 'pages', 'publisher', 'address'],
-      conference: ['author', 'title', 'booktitle', 'year', 'pages', 'publisher', 'address'],
+      inproceedings: ['author', 'title', 'booktitle', 'year', 'pages', 'publisher'], // 移除 address
+      conference: ['author', 'title', 'booktitle', 'year', 'pages', 'publisher'], // 移除 address
       book: ['title', 'publisher', 'year', 'author', 'address'],
       thesis: ['author', 'title', 'school', 'year', 'address'],
       phdthesis: ['author', 'title', 'school', 'year', 'address'],
@@ -84,39 +84,7 @@ function checkGBT7714Format(entry) {
     results.entryClassName = entryClassName;
   }
   
-  // 添加出版社地址检查 (针对会议论文)
-  if (entryType === 'inproceedings' || entryType === 'conference') {
-    // 检查出版社是否存在
-    if (entry.entryTags.publisher) {
-      const publisher = entry.entryTags.publisher.trim();
-      
-      // 检查地址是否存在
-      if (!entry.entryTags.address) {
-        results.warnings.push(`缺少地址字段 (address)，会议论文需要提供出版社地址`);
-      } else {
-        const address = entry.entryTags.address.trim();
-        
-        // 检查是否在预定义的出版社列表中
-        let foundInDatabase = false;
-        for (const knownPublisher in GBT7714_2015.datas.addresses) {
-          if (publisher.toLowerCase() === knownPublisher.toLowerCase()) {
-            foundInDatabase = true;
-            const standardAddress = GBT7714_2015.datas.addresses[knownPublisher];
-            
-            // 修正：修改比较逻辑
-            if (address.toLowerCase() !== standardAddress.toLowerCase()) {
-              results.warnings.push(`出版社地址可能不标准: 使用了 "${address}"，标准地址应为 "${standardAddress}"`);
-            }
-            break;
-          }
-        }
-        
-        if (!foundInDatabase) {
-          results.warnings.push(`出版社 "${publisher}" 不在预定义数据库中，请确认地址 "${address}" 是否正确`);
-        }
-      }
-    }
-  }
+  // 移除会议论文的出版社地址检查
   
   return results;
 }
@@ -530,7 +498,10 @@ document.addEventListener('DOMContentLoaded', function() {
       "其他": 0
     };
     
+    // 收集条目名称
+    let entryNames = [];
     entries.forEach(entry => {
+      entryNames.push(entry.citationKey);
       const entryType = entry.entryType.toLowerCase();
       typeCount[entryType] = (typeCount[entryType] || 0) + 1;
       
@@ -570,6 +541,7 @@ document.addEventListener('DOMContentLoaded', function() {
         classCount["其他"]++;
       }
     });
+    console.log(entryNames);
     
     return { typeCount, classCount };
   }
@@ -603,7 +575,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // 在 getEntryTypeStatistics 函数之后添加年份统计函数(仅统计论文: inproceedings, article)
   function getYearStatistics(entries) {
     const yearCount = {};
-    const currentYear = new Date().getFullYear();
+    const currentYear = new Date().getFullYear() - 1;
     let missingYearCount = 0;
     
     // 按年份统计条目数量
@@ -667,7 +639,7 @@ document.addEventListener('DOMContentLoaded', function() {
       return '<p>无法获取年份统计信息</p>';
     }
     
-    const currentYear = new Date().getFullYear();
+    const currentYear = new Date().getFullYear()-1;
     let html = '<div class="year-statistics">';
     
     // 基本统计信息
@@ -880,144 +852,6 @@ document.addEventListener('DOMContentLoaded', function() {
     };
   }
 
-  // 生成出版社统计HTML
-  function generatePublisherStatisticsHTML(stats) {
-    if (!stats || stats.totalCount === 0) {
-      return '<p>未找到会议论文条目</p>';
-    }
-    
-    let html = '<div class="publisher-statistics">';
-    
-    // 基本统计信息
-    html += '<p><strong>出版社地址统计：</strong></p>';
-    html += '<ul>';
-    html += `<li>会议论文总数：${stats.totalCount}篇</li>`;
-    
-    if (stats.missingPublisherCount > 0) {
-      html += `<li class="error">缺少出版社字段：${stats.missingPublisherCount}篇</li>`;
-    }
-    
-    if (stats.missingAddressCount > 0) {
-      html += `<li class="warning">缺少地址字段：${stats.missingAddressCount}篇</li>`;
-    }
-    
-    // 不一致地址统计
-    if (stats.publishersWithMultipleAddresses.length > 0) {
-      html += `<li class="warning">使用多个不同地址的出版社：${stats.publishersWithMultipleAddresses.length}个</li>`;
-    }
-    
-    // 与数据库不一致的出版社
-    if (stats.publishersWithInconsistentAddresses.length > 0) {
-      html += `<li class="error">与标准地址不一致的出版社：${stats.publishersWithInconsistentAddresses.length}个</li>`;
-    }
-    
-    // 不在数据库中的出版社
-    if (stats.publishersNotInDatabase.length > 0) {
-      html += `<li class="warning">不在预定义数据库中的出版社：${stats.publishersNotInDatabase.length}个</li>`;
-    }
-    
-    html += '</ul>';
-    
-    // 详细信息部分（可折叠）
-    if (stats.publishersWithMultipleAddresses.length > 0) {
-      html += '<div class="collapsible-section">';
-      html += '<p><strong>多个不同地址的出版社</strong> <button class="toggle-button">显示/隐藏</button></p>';
-      html += '<div class="collapsible-content" style="display: none;">';
-      html += '<ul>';
-      
-      stats.publishersWithMultipleAddresses.forEach(item => {
-        html += `<li><strong>${item.publisher}</strong> (${item.addresses.length}个不同地址)`;
-        html += '<ul>';
-        
-        item.addresses.forEach(addr => {
-          let addressClass = '';
-          let addressNote = '';
-          
-          // 如果有数据库记录，标记哪个是正确的
-          if (item.inDatabase) {
-            if (addr.address.toLowerCase() == item.databaseAddress.toLowerCase() || 
-                item.databaseAddress.toLowerCase().includes(addr.address.toLowerCase())) {
-              addressClass = 'valid';
-              addressNote = ' (推荐使用)';
-            } else {
-              addressClass = 'error';
-              addressNote = ' (与标准不一致)';
-            }
-          }
-          
-          html += `<li class="${addressClass}">${addr.address} (使用次数: ${addr.count})${addressNote}</li>`;
-        });
-        
-        if (item.inDatabase) {
-          html += `<li class="info">标准地址: ${item.databaseAddress}</li>`;
-        }
-        
-        html += '</ul></li>';
-      });
-      
-      html += '</ul></div></div>';
-    }
-    
-    // 显示需要检查的出版社
-    if (stats.publishersNotInDatabase.length > 0) {
-      html += '<div class="collapsible-section">';
-      html += '<p><strong>需要手动检查的出版社</strong> <button class="toggle-button">显示/隐藏</button></p>';
-      html += '<div class="collapsible-content" style="display: none;">';
-      html += '<p class="warning">以下出版社不在预定义数据库中，请手动确认其标准地址：</p>';
-      html += '<ul>';
-      
-      stats.publishersNotInDatabase.forEach(item => {
-        html += `<li><strong>${item.publisher}</strong> (${item.entryCount}篇)`;
-        if (item.addresses.length > 0) {
-          html += '<ul>';
-          item.addresses.forEach(addr => {
-            html += `<li>${addr}</li>`;
-          });
-          html += '</ul>';
-        } else {
-          html += ' <span class="error">未提供地址</span>';
-        }
-        html += '</li>';
-      });
-      
-      html += '</ul></div></div>';
-    }
-    
-    // 已知但地址不一致的出版社
-    if (stats.publishersWithInconsistentAddresses.length > 0) {
-      html += '<div class="collapsible-section">';
-      html += '<p><strong>需要更正地址的出版社</strong> <button class="toggle-button">显示/隐藏</button></p>';
-      html += '<div class="collapsible-content" style="display: none;">';
-      html += '<ul>';
-      
-      stats.publishersWithInconsistentAddresses.forEach(item => {
-        html += `<li><strong>${item.publisher}</strong>`;
-        html += `<ul>`;
-        html += `<li class="valid">正确地址: ${item.correctAddress}</li>`;
-        
-        if (item.usedAddresses.length > 0) {
-          html += '<li>已使用的地址:';
-          html += '<ul>';
-          item.usedAddresses.forEach(addr => {
-            if (addr.address.toLowerCase() === item.correctAddress.toLowerCase()) {
-              html += `<li class="valid">${addr.address} (使用次数: ${addr.count})</li>`;
-            } else {
-              html += `<li class="error">${addr.address} (使用次数: ${addr.count})</li>`;
-            }
-          });
-          html += '</ul></li>';
-        }
-        
-        html += '</ul></li>';
-      });
-      
-      html += '</ul></div></div>';
-    }
-    
-    html += '</div>';
-    return html;
-  }
-
   // 修改检查按钮点击事件处理函数
   checkButton.addEventListener('click', function() {
     const bibtexText = bibtexInput.value.trim();
@@ -1057,7 +891,6 @@ document.addEventListener('DOMContentLoaded', function() {
         <p>总计 ${parsedEntries.length} 个条目</p>
         ${generateTypeStatisticsHTML(typeStats)}
         ${generateYearStatisticsHTML(yearStats)}
-        ${generatePublisherStatisticsHTML(publisherStats)}
       </div>`;
       
       let validEntries = 0;

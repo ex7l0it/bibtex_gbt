@@ -60,7 +60,6 @@ const GBT7714_2015 = {
             "author", // 主要责任者
             "title", // 题名
             "booktitle", // 专著题名
-            "address", // 出版地
             "publisher", // 出版者
             "year", // 出版年
             "pages", // 页码
